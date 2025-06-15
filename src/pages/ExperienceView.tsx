@@ -101,18 +101,16 @@ const ExperienceView = () => {
   const isGuest = !user || !user.id || typeof user.id !== 'string' || user.id.length < 10;
   
   const handleAddToCart = async () => {
+    if (!experience) return;
     if (isGuest) {
       // LocalStorage fallback ONLY, do not call CartContext or Supabase
-      if (!experience) return;
       let cart = localStorage.getItem('cart');
       let cartArr = cart ? JSON.parse(cart) : [];
       const idx = cartArr.findIndex((item: any) => item.experienceId === experience.id);
       if (idx > -1) {
-        cartArr[idx].quantity += 1;
-        setQuantityInCart(cartArr[idx].quantity);
+        cartArr[idx].quantity = quantityInCart;
       } else {
-        cartArr.push({ experienceId: experience.id, quantity: 1 });
-        setQuantityInCart(1);
+        cartArr.push({ experienceId: experience.id, quantity: quantityInCart });
       }
       localStorage.setItem('cart', JSON.stringify(cartArr));
       toast.success('Added to cart');
@@ -120,7 +118,7 @@ const ExperienceView = () => {
     }
     setIsCartLoading(true);
     try {
-      await addToCart(experience.id);
+      await addToCart(experience.id); // Only pass experience.id for logged-in users
       toast.success('Added to cart');
     } catch (e) {
       toast.error('Failed to add to cart');
@@ -129,66 +127,15 @@ const ExperienceView = () => {
     }
   };
 
-  const handleDecreaseQuantity = async () => {
+  const handleDecreaseQuantity = () => {
     if (quantityInCart <= 1) return; // Prevent going below 1
-    if (isGuest) {
-      // LocalStorage fallback ONLY
-      if (!experience) return;
-      let cart = localStorage.getItem('cart');
-      let cartArr = cart ? JSON.parse(cart) : [];
-      const idx = cartArr.findIndex((item: any) => item.experienceId === experience.id);
-      let newQty = quantityInCart;
-      if (idx > -1 && cartArr[idx].quantity > 1) {
-        cartArr[idx].quantity -= 1;
-        newQty = cartArr[idx].quantity;
-        cartArr = [...cartArr]; // force new array reference
-        localStorage.setItem('cart', JSON.stringify(cartArr));
-        setQuantityInCart(newQty);
-        toast.success('Updated quantity');
-      }
-      return;
-    }
-    setIsCartLoading(true);
-    try {
-      await updateQuantity(experience.id, quantityInCart - 1);
-      toast.success('Updated quantity');
-    } catch (e) {
-      toast.error('Failed to update quantity');
-    } finally {
-      setIsCartLoading(false);
-    }
+    setQuantityInCart(quantityInCart - 1);
+    toast.info('Updated number of people');
   };
 
-  const handleIncreaseQuantity = async () => {
-    if (isGuest) {
-      // LocalStorage fallback ONLY
-      if (!experience) return;
-      let cart = localStorage.getItem('cart');
-      let cartArr = cart ? JSON.parse(cart) : [];
-      const idx = cartArr.findIndex((item: any) => item.experienceId === experience.id);
-      let newQty = 1;
-      if (idx > -1) {
-        cartArr[idx].quantity += 1;
-        newQty = cartArr[idx].quantity;
-        cartArr = [...cartArr]; // force new array reference
-      } else {
-        cartArr.push({ experienceId: experience.id, quantity: 1 });
-        newQty = 1;
-      }
-      localStorage.setItem('cart', JSON.stringify(cartArr));
-      setQuantityInCart(newQty);
-      toast.success(idx > -1 ? 'Updated quantity' : 'Added to cart');
-      return;
-    }
-    setIsCartLoading(true);
-    try {
-      await updateQuantity(experience.id, quantityInCart + 1);
-      toast.success('Updated quantity');
-    } catch (e) {
-      toast.error('Failed to update quantity');
-    } finally {
-      setIsCartLoading(false);
-    }
+  const handleIncreaseQuantity = () => {
+    setQuantityInCart(quantityInCart + 1);
+    toast.info('Updated number of people');
   };
   
   const toggleWishlist = async () => {
